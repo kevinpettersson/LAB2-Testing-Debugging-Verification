@@ -41,52 +41,52 @@ class CircularMemory{
         requires Valid()
         ensures Valid()
     {
-        (write_position + 1 % cells.Length == read_position)
+        ((write_position + 1) % cells.Length == read_position)
     }
 
     method Read() returns (isSuccess : bool, content : int)
         modifies this
         requires Valid()
         ensures  Valid()
-        ensures isSuccess  ==> read_position == old(read_position) + 1 % cells.Length 
+        ensures isSuccess  ==> 0 <= old(read_position) < cells.Length
         ensures isSuccess  ==> content       == cells[old(read_position)]
+        ensures isSuccess  ==> read_position == (old(read_position) + 1) % cells.Length
         ensures !isSuccess ==> read_position == old(read_position)
         ensures !isSuccess ==> content       == -100
     {
         isSuccess := false;
         content := -100;
 
-        if(!(write_position + 1 % cells.Length == read_position)){
-            if(read_position >= 0 && read_position < cells.Length){
-                content       := cells[read_position];
-                read_position := read_position + 1 % cells.Length;
-                isSuccess     := true;
-                return isSuccess, content;  
-            }
+        if(!isEmpty()){
+            isSuccess     := true;
+            content       := cells[read_position];
+            read_position := (read_position + 1) % cells.Length;
+            return isSuccess, content;          
         }else { 
-            return isSuccess, -100;
+            return isSuccess, content;
         }
+    }
+
+    
+    method Write(input : int) returns (isSuccess : bool)
+        modifies this, cells
+        requires Valid()
+        ensures  Valid()
+        ensures 0 <= old(write_position) < cells.Length
+        ensures isSuccess ==> cells[old(write_position)] == input
+        ensures isSuccess ==> write_position == (old(write_position) + 1) % cells.Length
+        ensures !isSuccess ==> write_position == old(write_position)
+    {
+        isSuccess := false;
+    
+        if(!isFull()){
+            isSuccess := true;
+            cells[write_position] := input;
+            write_position := (write_position + 1) % cells.Length;
+            return isSuccess;
+        } else {
+            return isSuccess;
+        }
+        
     }
 }
-    /*
-    method Write(input : int) returns (isSuccess : bool)
-        modifies this
-        requires Valid()
-        requires isFull()
-        ensures  Valid()
-        ensures isFull()
-        ensures  isSuccess ==> cells[write_position] == input
-        ensures !isSuccess ==> cells[write_position] != input
-    
-    {
-        if(!isFull()){
-            return false;
-        } else if(write_position == read_position){
-            cells[write_position] := input;
-            write_position := write_position + 1;
-            return true;
-        } else {
-            return false;
-        }
-    }
-    */
