@@ -9,6 +9,9 @@ class CircularMemory{
     constructor Init(cap : int)
         requires cap > 0
         ensures Valid()
+        ensures fresh(cells)
+        ensures read_position == 0 && write_position == 0
+        ensures cap == cells.Length
     {
         cells := new int[cap];
         read_position, write_position := 0, 0;
@@ -20,9 +23,7 @@ class CircularMemory{
     {
         (read_position >= 0 && read_position < cells.Length) &&
         (write_position >= 0 && write_position < cells.Length) &&
-        (cells.Length > 0) //&&
-        //(isFlipped ==> write_position <= read_position) &&
-        //(!isFlipped ==> write_position >= read_position) 
+        (cells.Length > 0)
     }
 
     // A predicate indicating no more Read available
@@ -56,14 +57,14 @@ class CircularMemory{
         content := -100;
 
         if(!isEmpty()){
-            isSuccess     := true;
-            content       := cells[read_position];
-            read_position := (read_position + 1) % cells.Length;
             // if condition holds the read-pointer will end up on same index as the write-pointer and isFlipped get set to false
             // which indicates the buffer is empty.
             if(read_position == cells.Length - 1 && write_position == 0){
                 isFlipped := false;
             }
+            isSuccess     := true;
+            content       := cells[read_position];
+            read_position := (read_position + 1) % cells.Length;
             return isSuccess, content;          
         }else { 
             return isSuccess, content;
@@ -72,28 +73,27 @@ class CircularMemory{
 
     
     method Write(input : int) returns (isSuccess : bool)
-        modifies this, cells
+        modifies this, this.cells
         requires Valid()
         ensures  Valid()
-        ensures 0 <= old(write_position) < cells.Length
-        ensures isSuccess ==> cells[old(write_position)] == input
-        ensures !isSuccess ==> write_position == old(write_position)
+        ensures 0           <= old(write_position) < cells.Length
+        ensures isSuccess   ==> cells[old(write_position)] == input
+        ensures !isSuccess  ==> write_position == old(write_position)
     {
         isSuccess := false;
     
         if(!isFull()){
-            isSuccess := true;
-            cells[write_position] := input;
-            write_position := (write_position + 1) % cells.Length;
             // if condition holds the write-pointer will end up on same index as the read-pointer and isFlipped get set to true
             // which indicates the buffer is full.
             if(write_position == cells.Length - 1 && read_position == 0){
                 isFlipped := true;
             }
+            isSuccess := true;
+            cells[write_position] := input;
+            write_position := (write_position + 1) % cells.Length;
             return isSuccess;
         } else {
             return isSuccess;
-        }
-        
+        } 
     }
 }
